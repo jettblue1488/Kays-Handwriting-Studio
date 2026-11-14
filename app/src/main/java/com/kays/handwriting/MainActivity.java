@@ -44,8 +44,13 @@ public class MainActivity extends Activity {
     Paint p=new Paint(3);if(lined){p.setColor(0xffb8d1e8);p.setStrokeWidth(2);for(int y=110;y<h;y+=85)c.drawLine(40,y,w-40,y,p);}
     p.setColor(ink);p.setTextSize(43);p.setTypeface(Typeface.create(mode.getSelectedItemPosition()==0?"cursive":"serif",Typeface.ITALIC));
     String text=editor.getText().toString();int y=95;for(String paragraph:text.split("\\n",-1)){String line="";for(String word:paragraph.split(" ")){String test=line.isEmpty()?word:line+" "+word;if(p.measureText(test)>w-100){c.drawText(line,50,y,p);y+=85;line=word;}else line=test;}c.drawText(line,50,y,p);y+=85;if(y>h-80)break;}
-    File f=new File(getCacheDir(),"letter.png");try(FileOutputStream out=new FileOutputStream(f)){bmp.compress(Bitmap.CompressFormat.PNG,100,out);}
-    Uri uri=androidx.core.content.FileProvider.getUriForFile(this,getPackageName()+".files",f);
+    android.content.ContentValues values=new android.content.ContentValues();
+    values.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME,"Kays-Letter-"+System.currentTimeMillis()+".png");
+    values.put(android.provider.MediaStore.Images.Media.MIME_TYPE,"image/png");
+    values.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH,"Pictures/KaysHandwritingStudio");
+    Uri uri=getContentResolver().insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values);
+    if(uri==null)throw new IOException("Cannot create image");
+    try(java.io.OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null)throw new IOException("Cannot open image");bmp.compress(Bitmap.CompressFormat.PNG,100,out);}
     Intent i=new Intent(Intent.ACTION_SEND);i.setType("image/png");i.putExtra(Intent.EXTRA_STREAM,uri);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"Share generated letter"));
   }catch(Exception e){Toast.makeText(this,"Export failed: "+e.getMessage(),1).show();}}
   @Override protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);if(req==42&&res==RESULT_OK&&data!=null){sampleUri=data.getData();try{getContentResolver().takePersistableUriPermission(sampleUri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}sample.setImageURI(sampleUri);getPreferences(0).edit().putString("sample",sampleUri.toString()).apply();}}
