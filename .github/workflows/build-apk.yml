@@ -20,7 +20,22 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
           test -d "$ANDROID_HOME/platforms/android-35" || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
       - name: Build APK
-        run: gradle --no-daemon :app:assembleDebug
+        run: |
+          set -o pipefail
+          gradle --no-daemon --console=plain :app:assembleDebug 2>&1 | tee build.log
+      - name: Show key build errors
+        if: failure()
+        run: |
+          echo "=== FIRST ERRORS AND FAILURE SUMMARY ==="
+          grep -n -m 25 -E 'What went wrong|FAILURE:|Could not|Plugin \[|error:|Execution failed|Caused by:' build.log || true
+          echo "=== LOG START ==="
+          head -n 110 build.log || true
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: build.log
       - uses: actions/upload-artifact@v4
         with:
           name: Kays-Handwriting-Studio-debug-APK
